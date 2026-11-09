@@ -178,4 +178,12 @@ object ServiceNotifications : NotificationChannels() {
     ) {
         setLightsEnabled(true).setVibrationEnabled(true)
     }
+
+    val discord by channel(
+        description = R.string.discord_presence,
+        importance = NotificationManagerCompat.IMPORTANCE_HIGH,
+        singleNotification = true
+    ) {
+        setLightsEnabled(true).setVibrationEnabled(true)
+    }
 }

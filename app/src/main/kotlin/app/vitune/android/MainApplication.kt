@@ -80,6 +80,7 @@ import app.vitune.android.ui.screens.player.Thumbnail
 import app.vitune.android.ui.screens.playlistRoute
 import app.vitune.android.ui.screens.searchResultRoute
 import app.vitune.android.ui.screens.settingsRoute
+import app.vitune.android.ui.screens.settings.SettingsScreenRequests
 import app.vitune.android.utils.DisposableListener
 import app.vitune.android.utils.KeyedCrossfade
 import app.vitune.android.utils.LocalMonetCompat
@@ -150,6 +151,12 @@ class MainViewModel : ViewModel() {
 }
 
 class MainActivity : ComponentActivity(), MonetColorsChangedListener {
+    companion object {
+        /** Int extra for [Intent.ACTION_APPLICATION_PREFERENCES]: which settings tab to open. */
+        const val EXTRA_SETTINGS_TAB = "app.vitune.android.SETTINGS_TAB"
+        const val SETTINGS_TAB_PLAYER = 1
+    }
+
     private val vm: MainViewModel by viewModels()
 
     private val serviceConnection = object : ServiceConnection {
@@ -378,7 +385,12 @@ class MainActivity : ComponentActivity(), MonetColorsChangedListener {
                 searchResultRoute.ensureGlobal(query)
             }
 
-            Intent.ACTION_APPLICATION_PREFERENCES -> settingsRoute.ensureGlobal()
+            Intent.ACTION_APPLICATION_PREFERENCES -> {
+                val tab = intent.getIntExtra(EXTRA_SETTINGS_TAB, -1)
+                intent.removeExtra(EXTRA_SETTINGS_TAB)
+                if (tab >= 0) SettingsScreenRequests.requestedTab.value = tab
+                settingsRoute.ensureGlobal()
+            }
 
             Intent.ACTION_VIEW, Intent.ACTION_SEND -> {
                 val uri = intent.data

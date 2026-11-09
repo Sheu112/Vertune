@@ -21,4 +21,10 @@ object DiscordPreferences : PreferencesHolder(Dependencies.application, "discord
      */
     val applicationIdProperty = string("")
     var applicationId by applicationIdProperty
+
+    /**
+     * Fingerprint of the token we last showed a "token rejected" notification for, so the same
+     * bad token only notifies once, even across app restarts. Cleared once a connection works.
+     */
+    var notifiedRejectedToken by string("")
 }

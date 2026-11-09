@@ -300,6 +300,8 @@
     <string name="discord_status_connected">Connected</string>
     <string name="discord_status_reconnecting">Connection lost, reconnecting…</string>
     <string name="discord_status_token_rejected">Discord rejected the token. It changes when you log out or change your password, so grab a new one and set it again</string>
+    <string name="discord_token_rejected_notification_title">Discord Rich Presence stopped</string>
+    <string name="discord_token_rejected_notification_text">Discord rejected your token. Tap to set a new one.</string>
     <string name="discord_token_set">Set (tap to change)</string>
     <string name="discord_token_not_set">Not set</string>
     <string name="discord_application_id">Discord application ID</string>

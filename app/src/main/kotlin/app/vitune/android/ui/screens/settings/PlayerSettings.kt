@@ -1,5 +1,11 @@
 package app.vitune.android.ui.screens.settings
 
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+import app.vitune.android.utils.hasPermission
+import app.vitune.core.ui.utils.isAtLeastAndroid13
 import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
@@ -205,10 +211,26 @@ private fun DiscordSettingsGroup() = SettingsGroup(
     var isEditingToken by rememberSaveable { mutableStateOf(false) }
     var isEditingApplicationId by rememberSaveable { mutableStateOf(false) }
 
+    // Needed on Android 13+ for the "Discord rejected your token" notification.
+    val context = LocalContext.current
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { }
+    )
+    fun requestNotificationPermission() {
+        if (
+            isAtLeastAndroid13 &&
+            !context.applicationContext.hasPermission(Manifest.permission.POST_NOTIFICATIONS)
+        ) notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
+
     if (isEditingToken) TextFieldDialog(
         hintText = stringResource(R.string.discord_token),
         onDismiss = { isEditingToken = false },
-        onAccept = { DiscordPreferences.token = it.trim() },
+        onAccept = {
+            DiscordPreferences.token = it.trim()
+            if (DiscordPreferences.enabled) requestNotificationPermission()
+        },
         isTextInputValid = { true }
     )
 
@@ -224,7 +246,10 @@ private fun DiscordSettingsGroup() = SettingsGroup(
         title = stringResource(R.string.discord_presence),
         text = stringResource(R.string.discord_presence_description),
         isChecked = DiscordPreferences.enabled,
-        onCheckedChange = { DiscordPreferences.enabled = it }
+        onCheckedChange = {
+            DiscordPreferences.enabled = it
+            if (it) requestNotificationPermission()
+        }
     )
 
     if (DiscordPreferences.enabled) {

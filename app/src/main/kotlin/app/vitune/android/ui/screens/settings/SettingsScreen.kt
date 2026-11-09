@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -55,12 +56,26 @@ import app.vitune.compose.routing.RouteHandler
 import app.vitune.core.ui.LocalAppearance
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.filterNotNull
+
+/** Lets other parts of the app (e.g. a notification) open a specific settings tab. */
+object SettingsScreenRequests {
+    val requestedTab = MutableStateFlow<Int?>(null)
+}
 
 @Route
 @Composable
 fun SettingsScreen() {
     val saveableStateHolder = rememberSaveableStateHolder()
     val [tabIndex, onTabChanged] = rememberSaveable { mutableIntStateOf(0) }
+
+    LaunchedEffect(Unit) {
+        SettingsScreenRequests.requestedTab.filterNotNull().collect {
+            onTabChanged(it)
+            SettingsScreenRequests.requestedTab.value = null
+        }
+    }
 
     PersistMapCleanup("settings/")
 
