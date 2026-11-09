@@ -12,6 +12,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import app.vitune.android.DiscordLoginActivity
 import app.vitune.android.R
 import app.vitune.android.preferences.DiscordPreferences
 import app.vitune.android.service.DiscordPresence
@@ -28,18 +29,6 @@ fun DiscordSettingsGroup() = SettingsGroup(
 ) {
     var isEditingToken by rememberSaveable { mutableStateOf(false) }
     var isEditingApplicationId by rememberSaveable { mutableStateOf(false) }
-    var isLoggingIn by rememberSaveable { mutableStateOf(false) }
-
-    // The "token rejected" notification asks for the login screen to open straight away.
-    LaunchedEffect(Unit) {
-        SettingsScreenRequests.discordLoginRequested.collect { requested ->
-            if (requested) {
-                isLoggingIn = true
-                SettingsScreenRequests.discordLoginRequested.value = false
-            }
-        }
-    }
-
     // Needed on Android 13+ for the "Discord rejected your token" notification.
     val context = LocalContext.current
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
@@ -53,6 +42,24 @@ fun DiscordSettingsGroup() = SettingsGroup(
         ) notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 
+    val loginLauncher = rememberLauncherForActivityResult(DiscordLoginActivity.Contract()) { token ->
+        if (token.isNullOrBlank()) return@rememberLauncherForActivityResult
+        DiscordPreferences.token = token
+        DiscordPreferences.enabled = true
+        context.toast(R.string.discord_login_success)
+        requestNotificationPermission()
+    }
+
+    // The "token rejected" notification asks for the login screen to open straight away.
+    LaunchedEffect(Unit) {
+        SettingsScreenRequests.discordLoginRequested.collect { requested ->
+            if (requested) {
+                loginLauncher.launch(Unit)
+                SettingsScreenRequests.discordLoginRequested.value = false
+            }
+        }
+    }
+
     if (isEditingToken) TextFieldDialog(
         hintText = stringResource(R.string.discord_token),
         onDismiss = { isEditingToken = false },
@@ -61,17 +68,6 @@ fun DiscordSettingsGroup() = SettingsGroup(
             if (DiscordPreferences.enabled) requestNotificationPermission()
         },
         isTextInputValid = { true }
-    )
-
-    if (isLoggingIn) DiscordLoginDialog(
-        onDismiss = { isLoggingIn = false },
-        onToken = { token ->
-            isLoggingIn = false
-            DiscordPreferences.token = token
-            DiscordPreferences.enabled = true
-            context.toast(R.string.discord_login_success)
-            requestNotificationPermission()
-        }
     )
 
     if (isEditingApplicationId) TextFieldDialog(
@@ -112,7 +108,7 @@ fun DiscordSettingsGroup() = SettingsGroup(
     SettingsEntry(
         title = stringResource(R.string.discord_login),
         text = stringResource(R.string.discord_login_description),
-        onClick = { isLoggingIn = true }
+        onClick = { loginLauncher.launch(Unit) }
     )
 
     SettingsEntry(
