@@ -264,6 +264,8 @@ fun SyncSettings(
     )
 
     SettingsCategoryScreen(title = stringResource(R.string.sync)) {
+        DiscordSettingsGroup()
+
         SettingsDescription(text = stringResource(R.string.sync_description))
 
         SettingsGroup(title = stringResource(R.string.piped)) {

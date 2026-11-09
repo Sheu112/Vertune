@@ -178,6 +178,7 @@ val Song.isLocal get() = id.startsWith(LOCAL_KEY_PREFIX)
 
 private const val LIKE_ACTION = "app.vitune.android.LIKE"
 private const val LOOP_ACTION = "app.vitune.android.LOOP"
+private const val DISCORD_SETTINGS_REQUEST_CODE = 4004
 
 @kotlin.OptIn(ExperimentalCoroutinesApi::class)
 @Suppress("LargeClass", "TooManyFunctions") // intended in this class: it is a service
@@ -398,6 +399,7 @@ class PlayerService : InvincibleService(), Player.Listener, PlaybackStatsListene
             subscribe(DiscordPreferences.enabledProperty) { maybeConfigureDiscordPresence() }
             subscribe(DiscordPreferences.tokenProperty) { maybeConfigureDiscordPresence() }
             subscribe(DiscordPreferences.applicationIdProperty) { maybeConfigureDiscordPresence() }
+            launch { DiscordPresence.status.collect { onDiscordStatusChanged(it) } }
             registerNetworkCallback()
 
             launch {
@@ -545,6 +547,62 @@ class PlayerService : InvincibleService(), Player.Listener, PlaybackStatsListene
         runCatching { connectivityManager.registerDefaultNetworkCallback(callback) }
             .onSuccess { networkCallback = callback }
     }
+
+    /**
+     * Posts a notification when Discord rejects the token. Only once per token: the connection
+     * loop stops after a rejection, and the token's fingerprint is remembered so restarting the
+     * app with the same bad token doesn't notify again.
+     */
+    private fun onDiscordStatusChanged(status: DiscordPresence.Status) {
+        val token = DiscordPreferences.token.trim()
+        when (status) {
+            DiscordPresence.Status.TokenRejected -> {
+                val fingerprint = discordTokenFingerprint(token)
+                if (token.isEmpty() || DiscordPreferences.notifiedRejectedToken == fingerprint) return
+                DiscordPreferences.notifiedRejectedToken = fingerprint
+
+                ServiceNotifications.discord.sendNotification(this) {
+                    this
+                        .setSmallIcon(R.drawable.alert_circle)
+                        .setCategory(NotificationCompat.CATEGORY_ERROR)
+                        .setContentTitle(getString(R.string.discord_token_rejected_notification_title))
+                        .setContentText(getString(R.string.discord_token_rejected_notification_text))
+                        .setStyle(
+                            NotificationCompat.BigTextStyle()
+                                .bigText(getString(R.string.discord_token_rejected_notification_text))
+                        )
+                        .setAutoCancel(true)
+                        .setContentIntent(
+                            activityPendingIntent<MainActivity>(
+                                requestCode = DISCORD_SETTINGS_REQUEST_CODE,
+                                flags = PendingIntent.FLAG_UPDATE_CURRENT
+                            ) {
+                                action = Intent.ACTION_APPLICATION_PREFERENCES
+                                putExtra(MainActivity.EXTRA_SETTINGS_TAB, MainActivity.SETTINGS_TAB_SYNC)
+                                putExtra(MainActivity.EXTRA_DISCORD_LOGIN, true)
+                            }
+                        )
+                }
+            }
+
+            DiscordPresence.Status.Connected -> {
+                DiscordPreferences.notifiedRejectedToken = ""
+                ServiceNotifications.discord.cancel(this)
+            }
+
+            DiscordPresence.Status.Connecting -> {
+                // A new token is being tried, so the old warning no longer applies.
+                if (DiscordPreferences.notifiedRejectedToken != discordTokenFingerprint(token)) {
+                    ServiceNotifications.discord.cancel(this)
+                }
+            }
+
+            else -> Unit
+        }
+    }
+
+    private fun discordTokenFingerprint(token: String) =
+        if (token.isEmpty()) "" else token.hashCode().toUInt().toString(16)
 
     private fun maybeConfigureDiscordPresence() {
         val enabled = DiscordPreferences.enabled && DiscordPreferences.token.isNotBlank()
