@@ -578,7 +578,8 @@ class PlayerService : InvincibleService(), Player.Listener, PlaybackStatsListene
                                 flags = PendingIntent.FLAG_UPDATE_CURRENT
                             ) {
                                 action = Intent.ACTION_APPLICATION_PREFERENCES
-                                putExtra(MainActivity.EXTRA_SETTINGS_TAB, MainActivity.SETTINGS_TAB_PLAYER)
+                                putExtra(MainActivity.EXTRA_SETTINGS_TAB, MainActivity.SETTINGS_TAB_SYNC)
+                                putExtra(MainActivity.EXTRA_DISCORD_LOGIN, true)
                             }
                         )
                 }

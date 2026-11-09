@@ -62,6 +62,9 @@ import kotlinx.coroutines.flow.filterNotNull
 /** Lets other parts of the app (e.g. a notification) open a specific settings tab. */
 object SettingsScreenRequests {
     val requestedTab = MutableStateFlow<Int?>(null)
+
+    /** Set to open the Discord login screen in the Player settings. */
+    val discordLoginRequested = MutableStateFlow(false)
 }
 
 @Route

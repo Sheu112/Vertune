@@ -1,11 +1,5 @@
 package app.vitune.android.ui.screens.settings
 
-import android.Manifest
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.ui.platform.LocalContext
-import app.vitune.android.utils.hasPermission
-import app.vitune.core.ui.utils.isAtLeastAndroid13
 import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
@@ -13,7 +7,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -27,12 +20,9 @@ import androidx.compose.ui.unit.dp
 import androidx.media3.common.util.UnstableApi
 import app.vitune.android.LocalPlayerServiceBinder
 import app.vitune.android.R
-import app.vitune.android.preferences.DiscordPreferences
 import app.vitune.android.preferences.PlayerPreferences
-import app.vitune.android.service.DiscordPresence
 import app.vitune.android.service.PlayerService
 import app.vitune.android.ui.components.themed.SecondaryTextButton
-import app.vitune.android.ui.components.themed.TextFieldDialog
 import app.vitune.android.ui.screens.Route
 import app.vitune.android.utils.rememberEqualizerLauncher
 import app.vitune.core.ui.utils.isAtLeastAndroid6
@@ -198,93 +188,7 @@ fun PlayerSettings() = with(PlayerPreferences) {
                 onClick = launchEqualizer
             )
         }
-        DiscordSettingsGroup()
     }
-}
-
-@Composable
-private fun DiscordSettingsGroup() = SettingsGroup(
-    title = stringResource(R.string.discord),
-    description = stringResource(R.string.discord_presence_warning),
-    important = true
-) {
-    var isEditingToken by rememberSaveable { mutableStateOf(false) }
-    var isEditingApplicationId by rememberSaveable { mutableStateOf(false) }
-
-    // Needed on Android 13+ for the "Discord rejected your token" notification.
-    val context = LocalContext.current
-    val notificationPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-        onResult = { }
-    )
-    fun requestNotificationPermission() {
-        if (
-            isAtLeastAndroid13 &&
-            !context.applicationContext.hasPermission(Manifest.permission.POST_NOTIFICATIONS)
-        ) notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-    }
-
-    if (isEditingToken) TextFieldDialog(
-        hintText = stringResource(R.string.discord_token),
-        onDismiss = { isEditingToken = false },
-        onAccept = {
-            DiscordPreferences.token = it.trim()
-            if (DiscordPreferences.enabled) requestNotificationPermission()
-        },
-        isTextInputValid = { true }
-    )
-
-    if (isEditingApplicationId) TextFieldDialog(
-        hintText = stringResource(R.string.discord_application_id),
-        initialTextInput = DiscordPreferences.applicationId,
-        onDismiss = { isEditingApplicationId = false },
-        onAccept = { DiscordPreferences.applicationId = it.trim() },
-        isTextInputValid = { it.isBlank() || it.trim().all(Char::isDigit) }
-    )
-
-    SwitchSettingsEntry(
-        title = stringResource(R.string.discord_presence),
-        text = stringResource(R.string.discord_presence_description),
-        isChecked = DiscordPreferences.enabled,
-        onCheckedChange = {
-            DiscordPreferences.enabled = it
-            if (it) requestNotificationPermission()
-        }
-    )
-
-    if (DiscordPreferences.enabled) {
-        val status by DiscordPresence.status.collectAsState()
-        SettingsEntry(
-            title = stringResource(R.string.discord_status),
-            text = stringResource(
-                when (status) {
-                    DiscordPresence.Status.Off -> R.string.discord_status_off
-                    DiscordPresence.Status.Connecting -> R.string.discord_status_connecting
-                    DiscordPresence.Status.Connected -> R.string.discord_status_connected
-                    DiscordPresence.Status.Reconnecting -> R.string.discord_status_reconnecting
-                    DiscordPresence.Status.TokenRejected -> R.string.discord_status_token_rejected
-                }
-            ),
-            onClick = { }
-        )
-    }
-
-    SettingsEntry(
-        title = stringResource(R.string.discord_token),
-        text = stringResource(
-            if (DiscordPreferences.token.isBlank()) R.string.discord_token_not_set
-            else R.string.discord_token_set
-        ),
-        onClick = { isEditingToken = true }
-    )
-
-    SettingsEntry(
-        title = stringResource(R.string.discord_application_id),
-        text = DiscordPreferences.applicationId.ifBlank {
-            stringResource(R.string.discord_application_id_description)
-        },
-        onClick = { isEditingApplicationId = true }
-    )
 }
 
 @Composable

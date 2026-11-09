@@ -299,9 +299,12 @@
     <string name="discord_status_connecting">Connecting…</string>
     <string name="discord_status_connected">Connected</string>
     <string name="discord_status_reconnecting">Connection lost, reconnecting…</string>
-    <string name="discord_status_token_rejected">Discord rejected the token. It changes when you log out or change your password, so grab a new one and set it again</string>
+    <string name="discord_status_token_rejected">Discord rejected the token. It changes when you log out or change your password, so log in again below</string>
     <string name="discord_token_rejected_notification_title">Discord Rich Presence stopped</string>
-    <string name="discord_token_rejected_notification_text">Discord rejected your token. Tap to set a new one.</string>
+    <string name="discord_token_rejected_notification_text">Discord rejected your token. Tap to log in again.</string>
+    <string name="discord_login">Log in with Discord</string>
+    <string name="discord_login_description">Log in on Discord\'s own page and the token is filled in for you</string>
+    <string name="discord_login_success">Logged in to Discord</string>
     <string name="discord_token_set">Set (tap to change)</string>
     <string name="discord_token_not_set">Not set</string>
     <string name="discord_application_id">Discord application ID</string>

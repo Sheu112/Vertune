@@ -154,7 +154,10 @@ class MainActivity : ComponentActivity(), MonetColorsChangedListener {
     companion object {
         /** Int extra for [Intent.ACTION_APPLICATION_PREFERENCES]: which settings tab to open. */
         const val EXTRA_SETTINGS_TAB = "app.vitune.android.SETTINGS_TAB"
-        const val SETTINGS_TAB_PLAYER = 1
+        const val SETTINGS_TAB_SYNC = 4
+
+        /** Boolean extra for [Intent.ACTION_APPLICATION_PREFERENCES]: open the Discord login. */
+        const val EXTRA_DISCORD_LOGIN = "app.vitune.android.DISCORD_LOGIN"
     }
 
     private val vm: MainViewModel by viewModels()
@@ -389,6 +392,10 @@ class MainActivity : ComponentActivity(), MonetColorsChangedListener {
                 val tab = intent.getIntExtra(EXTRA_SETTINGS_TAB, -1)
                 intent.removeExtra(EXTRA_SETTINGS_TAB)
                 if (tab >= 0) SettingsScreenRequests.requestedTab.value = tab
+                if (intent.getBooleanExtra(EXTRA_DISCORD_LOGIN, false)) {
+                    intent.removeExtra(EXTRA_DISCORD_LOGIN)
+                    SettingsScreenRequests.discordLoginRequested.value = true
+                }
                 settingsRoute.ensureGlobal()
             }
 
